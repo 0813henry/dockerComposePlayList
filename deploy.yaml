@@ -4,7 +4,7 @@
   become: yes
   vars:
     project_repo: "https://github.com/0813henry/playlistsnow.git"
-    project_path: "/home/sysadmin/playlistsnow"
+    project_path: "/home/sysadmin/playlistnow"
     project_branch: "main"
 
   tasks:
