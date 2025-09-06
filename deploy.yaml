@@ -12,7 +12,7 @@
       ansible.builtin.apt:
         update_cache: yes
       when: ansible_os_family == "Debian"
-      
+
     # ---------------- Git ----------------
     - name: Ensure required packages are installed (curl, git)
       ansible.builtin.package:
@@ -47,12 +47,6 @@
         state: present
       when: ansible_os_family == "Debian"
 
-    - name: Add sysadmin to docker group
-      ansible.builtin.user:
-        name: sysadmin
-        groups: docker
-        append: yes
-        
     # ---------------- Usuario sysadmin ----------------
     - name: Ensure sysadmin user exists
       ansible.builtin.user:
@@ -61,6 +55,21 @@
         shell: /bin/bash
         create_home: yes
 
+    - name: Add sysadmin to docker group
+      ansible.builtin.user:
+        name: sysadmin
+        groups: docker
+        append: yes
+
+    - name: Start and enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Reset ssh connection to refresh group membership
+      ansible.builtin.meta: reset_connection
+
     # ---------------- Proyecto ----------------
     - name: Ensure project directory exists
       ansible.builtin.file:
@@ -68,7 +77,7 @@
         state: directory
         owner: sysadmin
         group: sysadmin
-        mode: '0755'
+        mode: "0755"
 
     - name: Clone or update the repository
       ansible.builtin.git:
@@ -84,3 +93,5 @@
         project_src: "{{ project_path }}"
         state: present
       become_user: sysadmin
+      vars:
+        ansible_ssh_pipelining: no
