@@ -35,17 +35,19 @@ sudo usermod -aG sudo sysadmin
 git clone https://github.com/0813henry/dockerComposePlayList.git
 cd dockerComposePlayList
 
-# 2. Ejecutar playbook
+# 2. OPCIÓN A: Ejecutar con localhost directo (más simple)
+ansible-playbook deploy.yaml -c local -K
+
+# 3. OPCIÓN B: Usar inventory (si la opción A no funciona)
 ansible-playbook -i inventory.ini deploy.yaml
 
-# 3. Si aparece error de inventory, verificar el contenido:
-cat inventory.ini
-# Debe contener solo:
-# [controller]
-# localhost ansible_connection=local ansible_user=sysadmin
+# 4. OPCIÓN C: Forzar conexión local explícita
+ansible-playbook deploy.yaml --connection=local --ask-become-pass
 
-# 4. Si hay problemas de permisos sudo:
-ansible-playbook -i inventory.ini deploy.yaml --ask-become-pass
+# Parámetros:
+# -c local = usa conexión local (sin SSH)
+# -K = pide contraseña sudo
+# --ask-become-pass = igual que -K
 ```
 
 ## 🎯 Lo que hace el playbook
@@ -82,11 +84,21 @@ curl -X POST http://localhost:8080/api/songs \
 
 ## 🚨 Si hay problemas
 
+### Error SSH "Connection refused"
+
+Si ves: `ssh: connect to host localhost port 22: Connection refused`
+
+**Solución (usar conexión local SIN SSH):**
+
+```bash
+ansible-playbook deploy.yaml -c local -K
+```
+
 ### Error SafeRepresenter
 
 ```bash
 # Usar comando con -v en lugar del ansible.cfg
-ansible-playbook -i inventory.ini deploy.yaml -v
+ansible-playbook deploy.yaml -c local -v
 ```
 
 ### Permisos Docker

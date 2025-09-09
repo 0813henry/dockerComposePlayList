@@ -1,6 +1,7 @@
 ---
 - name: Install Docker, Git, clone PlaylistsNow repo and run docker compose
-  hosts: controller
+  hosts: localhost
+  connection: local
   become: yes
   vars:
     project_repo: "https://github.com/0813henry/playlistsnow.git"
