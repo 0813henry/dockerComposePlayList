@@ -35,13 +35,16 @@ sudo usermod -aG sudo sysadmin
 git clone https://github.com/0813henry/dockerComposePlayList.git
 cd dockerComposePlayList
 
-# 2. Ejecutar playbook (comando básico)
+# 2. Ejecutar playbook
 ansible-playbook -i inventory.ini deploy.yaml
 
-# 3. Si hay error de SafeRepresenter, usar:
-ansible-playbook -i inventory.ini deploy.yaml -v
+# 3. Si aparece error de inventory, verificar el contenido:
+cat inventory.ini
+# Debe contener solo:
+# [controller]
+# localhost ansible_connection=local ansible_user=sysadmin
 
-# 4. Si pide contraseña sudo:
+# 4. Si hay problemas de permisos sudo:
 ansible-playbook -i inventory.ini deploy.yaml --ask-become-pass
 ```
 
