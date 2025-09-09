@@ -1,11 +1,13 @@
 ---
-- name: Install Docker, Git, clone repo and run docker compose
-  hosts: localhost
+- name: Install Docker, Git, clone PlaylistsNow repo and run docker compose
+  hosts: controller
   become: yes
   vars:
     project_repo: "https://github.com/0813henry/playlistsnow.git"
-    project_path: "/home/sysadmin/playlistnow"
+    project_path: "/home/sysadmin/playlistsnow"
     project_branch: "main"
+    # MongoDB Atlas connection
+    mongodb_uri: "mongodb+srv://playlistsnow:playlistsnow@playlistsnow.meiecfs.mongodb.net/playlistsnow?retryWrites=true&w=majority"
 
   tasks:
     - name: Ensure apt cache is updated
@@ -79,7 +81,7 @@
         group: sysadmin
         mode: "0755"
 
-    - name: Clone or update the repository
+    - name: Clone or update the PlaylistsNow repository
       ansible.builtin.git:
         repo: "{{ project_repo }}"
         dest: "{{ project_path }}"
@@ -88,10 +90,54 @@
         force: yes
       become_user: sysadmin
 
-    - name: Run docker compose up -d
+    - name: Create backend .env file
+      ansible.builtin.copy:
+        content: |
+          PORT=8080
+          MONGODB_URI={{ mongodb_uri }}
+        dest: "{{ project_path }}/backend/.env"
+        owner: sysadmin
+        group: sysadmin
+        mode: "0644"
+
+    - name: Create frontend .env file
+      ansible.builtin.copy:
+        content: |
+          REACT_APP_API_URL=http://localhost:8080/api
+        dest: "{{ project_path }}/frontend/.env"
+        owner: sysadmin
+        group: sysadmin
+        mode: "0644"
+
+    - name: Ensure docker compose version 2 is available
+      ansible.builtin.shell: docker compose version
+      become_user: sysadmin
+      register: docker_compose_version
+      failed_when: false
+
+    - name: Build and run PlaylistsNow with docker compose
       community.docker.docker_compose_v2:
         project_src: "{{ project_path }}"
         state: present
+        recreate: always
       become_user: sysadmin
       vars:
         ansible_ssh_pipelining: no
+
+    - name: Wait for backend health check
+      ansible.builtin.uri:
+        url: "http://localhost:8080/api/health"
+        method: GET
+        status_code: 200
+      retries: 10
+      delay: 5
+      become_user: sysadmin
+
+    - name: Display deployment status
+      ansible.builtin.debug:
+        msg:
+          - "✅ PlaylistsNow deployed successfully!"
+          - "🎵 Frontend: http://localhost:3000"
+          - "🔧 Backend API: http://localhost:8080/api"
+          - "📊 Health check: http://localhost:8080/api/health"
+          - "🎶 Songs endpoint: http://localhost:8080/api/songs"
